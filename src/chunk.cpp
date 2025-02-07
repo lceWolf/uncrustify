@@ -259,6 +259,33 @@ Chunk *Chunk::SearchTypeLevel(const E_Token type, const E_Scope scope,
 } // Chunk::SearchTypeLevel
 
 
+Chunk *Chunk::SearchFirstTypeLevel(const E_Token types[], const size_t typeCount, const E_Scope scope,
+                                   const E_Direction dir, const int level) const
+{
+   T_SearchFnPtr searchFnPtr = GetSearchFn(dir);
+   Chunk         *pc         = const_cast<Chunk *>(this);
+
+   do                                              // loop over the chunk list
+   {
+      pc = (pc->*searchFnPtr)(scope);              // in either direction while
+
+      // Check if pc matches any type in the array
+      if (pc->IsNotNullChunk())
+      {
+         for (size_t i = 0; i < typeCount; ++i)
+         {
+            if (pc->IsTypeAndLevel(types[i], level))
+            {
+               return(pc);
+            }
+         }
+      }
+   } while (pc->IsNotNullChunk());                 // the end of the list was not reached yet
+
+   return(pc);                                     // the latest chunk is the searched one
+} // Chunk::SearchTypeLevel
+
+
 Chunk *Chunk::SearchStringLevel(const char *str, const size_t len, int level,
                                 const E_Scope scope, const E_Direction dir) const
 {
