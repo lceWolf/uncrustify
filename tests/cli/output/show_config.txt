@@ -302,6 +302,12 @@ sp_after_byref_func             = ignore   # ignore/add/remove/force
 # prototype or function definition.
 sp_before_byref_func            = ignore   # ignore/add/remove/force
 
+# Add or remove space before a reference sign '&', if preceeded by a function
+# prototype or function definition.
+#
+# Default: force
+sp_before_func_ref_qual         = force    # ignore/add/remove/force
+
 # Add or remove space after a reference sign '&', if followed by an open
 # parenthesis, as in 'char& (*)()'.
 sp_byref_paren                  = ignore   # ignore/add/remove/force
