@@ -1836,6 +1836,7 @@ void mark_function(Chunk *pc)
                  __func__, __LINE__, pc->Text(), pc->GetOrigLine(), pc->GetOrigCol(), get_token_name(pc->GetType()));
          LOG_FMT(LFCN, "%s(%d): (12) SET TO CT_FUNC_DEF: orig line is %zu, orig col is %zu, Text() '%s'\n",
                  __func__, __LINE__, pc->GetOrigLine(), pc->GetOrigCol(), pc->Text());
+        //NOTE: Setting stuff for function
          pc->SetType(CT_FUNC_DEF);
 
          if (prev->IsNullChunk())
@@ -2123,9 +2124,19 @@ void mark_function(Chunk *pc)
       while (  tmp->IsNotNullChunk()
             && tmp->IsNot(CT_BRACE_OPEN))
       {
-         LOG_FMT(LFCN, "%s(%d): (13) SET TO CT_FUNC_DEF: orig line is %zu, orig col is %zu, Text() '%s'\n",
-                 __func__, __LINE__, tmp->GetOrigLine(), tmp->GetOrigCol(), tmp->Text());
+         LOG_FMT(LFCN, "%s(%d): (13) SET TO CT_FUNC_DEF: orig line is %zu, orig col is %zu, Text() '%s', Type is %u, isByRef: %u, byRef value: %u\n",
+                 __func__, __LINE__, tmp->GetOrigLine(), tmp->GetOrigCol(), tmp->Text(), tmp->GetType(), tmp->Is(CT_BYREF), CT_BYREF);
          tmp->SetParentType(CT_FUNC_DEF);
+
+         if (tmp->Is(CT_BYREF) || tmp->Is(CT_BOOL) || tmp->Is(CT_AMP))
+         {
+            E_Token types[] = { CT_FPAREN_CLOSE, CT_FPAREN_OPEN };
+
+            if (tmp->GetFirstPrevType(types, 2)->IsTypeAndLevel(CT_FPAREN_CLOSE, tmp->GetLevel()))
+            {
+               tmp->SetType(CT_FUNC_REF_QUAL);
+            }
+         }
 
          if (!tmp->IsSemicolon())
          {
