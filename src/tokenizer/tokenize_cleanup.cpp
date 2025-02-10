@@ -187,8 +187,8 @@ void tokenize_trailing_return_types()
             LOG_FMT(LNOTE, "%s(%d): NOT COVERED\n", __func__, __LINE__);
          }
 
-         if (  (tmp->Is(CT_FPAREN_CLOSE)
-                || tmp->Is(CT_FUNC_REF_QUAL))
+         if (  tmp->Is(CT_FPAREN_CLOSE)
+
             && (  tmp->GetParentType() == CT_FUNC_PROTO
                || tmp->GetParentType() == CT_FUNC_DEF))
          {
