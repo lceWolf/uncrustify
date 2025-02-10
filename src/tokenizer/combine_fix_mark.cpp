@@ -1728,6 +1728,7 @@ void mark_function(Chunk *pc)
             && prev->IsNot(CT_QUALIFIER)
             && prev->IsNot(CT_TYPE)
             && prev->IsNot(CT_WORD)
+            && !(prev->Is(CT_BOOL) && strcmp(prev->Text(), "&&") == 0)
             && !prev->IsPointerOperator())
          {
             LOG_FMT(LFCN, "%s(%d):  --> Stopping on prev is '%s', orig line is %zu, orig col is %zu, type is %s\n",
