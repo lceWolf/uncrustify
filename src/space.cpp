@@ -1432,8 +1432,9 @@ static iarf_e do_space(Chunk *first, Chunk *second, int &min_sp)
          log_rule("sp_byref_paren");
          return(options::sp_byref_paren());
       }
-      else if (  first->GetParentType() == CT_FUNC_DEF        // Issue #3197, #3210
-              || first->GetParentType() == CT_FUNC_PROTO)
+      else if (  (  first->GetParentType() == CT_FUNC_DEF      // Issue #3197, #3210
+                 || first->GetParentType() == CT_FUNC_PROTO)
+              && !first->TestFlags(PCF_OLD_FCN_PARAMS))
       {
          // Add or remove space after a reference sign '&', if followed by a function
          // prototype or function definition.
@@ -1443,7 +1444,7 @@ static iarf_e do_space(Chunk *first, Chunk *second, int &min_sp)
       else if (  CharTable::IsKw1(second->GetStr()[0])
               && (  options::sp_after_byref() != IARF_IGNORE
                  || (  !second->Is(CT_FUNC_PROTO)
-                    && !second->Is(CT_FUNC_DEF))))
+                    && !second->Is(CT_FUNC_DEF)) || second->TestFlags(PCF_OLD_FCN_PARAMS)))
       {
          // Add or remove space after reference sign '&', if followed by a word.
          log_rule("sp_after_byref");                               // byref 1
@@ -1454,8 +1455,9 @@ static iarf_e do_space(Chunk *first, Chunk *second, int &min_sp)
    if (  second->Is(CT_BYREF)
       && !first->Is(CT_PAREN_OPEN))              // Issue #1804
    {
-      if (  second->GetParentType() == CT_FUNC_DEF     // Issue #3197, #3210
-         || second->GetParentType() == CT_FUNC_PROTO)
+      if (  (  second->GetParentType() == CT_FUNC_DEF   // Issue #3197, #3210
+            || second->GetParentType() == CT_FUNC_PROTO)
+         && !second->TestFlags(PCF_OLD_FCN_PARAMS))
       {
          // Add or remove space before a reference sign '&', if followed by a function
          // prototype or function definition.
@@ -3008,6 +3010,7 @@ static iarf_e do_space(Chunk *first, Chunk *second, int &min_sp)
       return(arg);
    }
 
+   //TODO: sp_after_func_ref_qual
    if (language_is_set(lang_flag_e::LANG_CPP) && second->Is(CT_FUNC_REF_QUAL))
    {
       log_rule("sp_before_func_ref_qual");
