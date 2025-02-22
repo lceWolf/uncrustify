@@ -3008,6 +3008,12 @@ static iarf_e do_space(Chunk *first, Chunk *second, int &min_sp)
       return(arg);
    }
 
+   if (language_is_set(lang_flag_e::LANG_CPP) && second->Is(CT_FUNC_REF_QUAL))
+   {
+      log_rule("sp_before_func_ref_qual");
+      return(options::sp_before_func_ref_qual());
+   }
+
    // Issue #3080
    if (  !language_is_set(lang_flag_e::LANG_D)
       && first->Is(CT_PAREN_CLOSE)
