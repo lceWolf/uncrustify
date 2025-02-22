@@ -537,7 +537,7 @@ void make_type(Chunk *pc)
       {
          pc->SetType(CT_PTR_TYPE);
       }
-      else if (  pc->IsAddress()
+      else if (  (pc->IsAddress() || (pc->Is(CT_BOOL) && (strcmp(pc->Text(), "&&") == 0) && !pc->TestFlags(PCF_IN_TEMPLATE)))
               && pc->GetPrev()->IsNot(CT_SQUARE_OPEN))            // Issue # 2166
       {
          pc->SetType(CT_BYREF);
