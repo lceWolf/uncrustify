@@ -517,6 +517,16 @@ public:
    Chunk *GetPrevType(const E_Token type, int level = ANY_LEVEL, E_Scope scope = E_Scope::ALL) const;
 
    /**
+    * @brief returns the prev chunk matching any of the given types at the level.
+    * @param types     the types to look for
+    * @param typeCount number of entries in the types array
+    * @param level     the level to match or ANY_LEVEL
+    * @param scope     code region to search in
+    * @return pointer to the prev matching chunk or Chunk::NullChunkPtr if no chunk was found
+    */
+   Chunk *GetFirstPrevType(const E_Token types[], size_t typeCount, int level = ANY_LEVEL, E_Scope scope = E_Scope::ALL) const;
+
+   /**
     * @brief returns the next chunk that holds a given string at a given level.
     * @param str    string to search for
     * @param len    length of string
@@ -640,6 +650,21 @@ public:
     * @return pointer to the found chunk or Chunk::NullChunkPtr if no chunk was found
     */
    Chunk *SearchTypeLevel(const E_Token type, const E_Scope scope = E_Scope::ALL, const E_Direction dir = E_Direction::FORWARD, const int level = ANY_LEVEL) const;
+
+   /**
+    * @brief search a chunk of any of the given types and level. Traverses a chunk list in the
+    * specified direction until a chunk of a given type and level is found.
+    *
+    * This function is a specialization of Chunk::Search.
+    *
+    * @param type[]   categories to search for
+    * @param typeCount   type array length
+    * @param scope  code parts to consider for search
+    * @param dir    search direction
+    * @param level nesting level to match or ANY_LEVEL
+    * @return pointer to the found chunk or Chunk::NullChunkPtr if no chunk was found
+    */
+   Chunk *SearchFirstTypeLevel(const E_Token types[], size_t typeCount, const E_Scope scope = E_Scope::ALL, const E_Direction dir = E_Direction::FORWARD, const int level = ANY_LEVEL) const;
 
    /**
     * @brief searches a chunk that holds a specific string
@@ -1495,6 +1520,12 @@ inline Chunk *Chunk::GetNextType(const E_Token type, const int level, const E_Sc
 inline Chunk *Chunk::GetPrevType(const E_Token type, const int level, const E_Scope scope) const
 {
    return(SearchTypeLevel(type, scope, E_Direction::BACKWARD, level));
+}
+
+
+inline Chunk *Chunk::GetFirstPrevType(const E_Token types[], size_t typeCount, const int level, const E_Scope scope) const
+{
+   return(SearchFirstTypeLevel(types, typeCount, scope, E_Direction::BACKWARD, level));
 }
 
 

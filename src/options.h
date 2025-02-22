@@ -396,6 +396,11 @@ sp_after_byref_func;
 extern Option<iarf_e>
 sp_before_byref_func;
 
+// Add or remove space before a reference sign '&', if preceeded by a function
+// prototype or function definition.
+extern Option<iarf_e>
+sp_before_func_ref_qual; // = IARF_FORCE
+
 // Add or remove space after a reference sign '&', if followed by an open
 // parenthesis, as in 'char& (*)()'.
 extern Option<iarf_e>
