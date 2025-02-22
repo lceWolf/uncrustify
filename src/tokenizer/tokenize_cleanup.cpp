@@ -1102,6 +1102,10 @@ void tokenize_cleanup()
                pc->SetType(CT_BYREF);
             }
          }
+         else if (prev->Is(CT_ANGLE_CLOSE) && prev->TestFlags(PCF_IN_TEMPLATE))
+         {
+            pc->SetType(CT_BYREF);
+         }
       }
 
       /*
