@@ -244,6 +244,12 @@ void takesFp_template(std::vector<int>&&(*cb)(std::string&&));
 int&& (*returnsFp())(int&&);
 std::vector<int>&&(*returnsFp_template())(std::string&&);
 std::function<void(int&&, std::tuple<int&&, std::tuple<int&&, std::vector<std::string&&> > >&&)> funcObj1;
+std::function<void(std::span<int>&& callback)> funcObj2;
+std::function<void(std::map<int, int>&& m)> funcObj3;
+std::function<void(std::vector<std::pair<int, double> >&& vp)> funcObj4;
+std::function<void(int&& a, double&& b)> funcObj5;
+std::function<void(int&& a)> funcObj6;
+std::function<void(int&& a, std::vector<int>&& v)> funcObj7;
 
 using FuncType = void (int&&);
 typedef void (*FuncPtr)(int&&);
@@ -535,6 +541,9 @@ void nestedTemplateTemplate(Outer<Inner>&& arg);
 std::conditional_t<std::is_integral_v<int>&&std::is_signed_v<int>, int&&, float&> condMember1;
 std::conditional_t<A&&B, std::conditional_t<C&&D, T&&, U&&>, V&> condMember2;
 std::enable_if_t<std::is_class_v<T>&&std::is_move_constructible_v<T>, T&&> enableIfRvalue;
+std::bool_constant<(a&&b)> parenBool1;
+std::bool_constant<(std::is_class_v<T>&&std::is_constructible_v<T>)> parenBool2;
+std::enable_if_t<(std::is_integral_v<T>&&std::is_signed_v<T>), std::function<void(int&& a)> > parenBoolMixed;
 
 template<typename T>
 auto nestedConditional(T&& t)

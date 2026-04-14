@@ -274,6 +274,23 @@ static bool handle_rvalue_angle_close(Chunk *prev, Chunk *pc);
 
 
 /**
+ * Checks whether a && chunk is inside function-type-signature parentheses
+ * within a template. Used to distinguish function type signature parameters
+ * like function<void(int && a)> from template boolean expressions like
+ * bool_constant<is_class_v<T> && is_constructible_v<T>>.
+ *
+ * Walks backward from pc tracking paren and angle bracket depth.
+ * Returns true if an unmatched PAREN_OPEN preceded by a type/word token
+ * is found before the template ANGLE_OPEN.
+ *
+ * @param pc  The && chunk (must have PCF_IN_TEMPLATE set)
+ * @return    true if inside function signature parens within a template,
+ *            false otherwise
+ */
+static bool is_in_func_signature_paren_within_template(Chunk *pc);
+
+
+/**
  * Handles && as rvalue reference before ellipsis (variadic template).
  * Pattern: Args&&... args
  *
@@ -571,6 +588,67 @@ static void flag_asm(Chunk *pc)
 } // flag_asm
 
 
+static bool is_in_func_signature_paren_within_template(Chunk *pc)
+{
+   int paren_depth = 0;
+   int angle_depth = 0;
+
+   for (Chunk *tmp = pc->GetPrevNcNnlNi(); tmp->IsNotNullChunk(); tmp = tmp->GetPrevNcNnlNi())
+   {
+      if (  tmp->Is(E_Token::CT_PAREN_CLOSE)
+         || tmp->Is(E_Token::CT_FPAREN_CLOSE))
+      {
+         paren_depth++;
+      }
+      else if (  tmp->Is(E_Token::CT_PAREN_OPEN)
+              || tmp->Is(E_Token::CT_FPAREN_OPEN))
+      {
+         if (paren_depth == 0)
+         {
+            // Found an unmatched paren open. Distinguish function type
+            // signature parens (e.g. function<void(int && a)>) from
+            // expression grouping parens (e.g. bool_constant<(a && b)>).
+            // Function signature parens are preceded by a type (the return type).
+            Chunk *before_paren = tmp->GetPrevNcNnlNi();
+
+            if (  before_paren->Is(E_Token::CT_TYPE)
+               || before_paren->Is(E_Token::CT_WORD)
+               || before_paren->Is(E_Token::CT_CPP_CAST)     // void(...)
+               || before_paren->Is(E_Token::CT_ANGLE_CLOSE)  // e.g. pair<int, int>(...)
+               || before_paren->Is(E_Token::CT_PTR_TYPE)     // e.g. void*(...)
+               || before_paren->Is(E_Token::CT_BYREF))       // e.g. int&(...)
+            {
+               return(true);
+            }
+            return(false); // This is an expressions grouping
+         }
+         paren_depth--;
+      }
+      else if (tmp->Is(E_Token::CT_ANGLE_CLOSE))
+      {
+         angle_depth++;
+      }
+      else if (tmp->Is(E_Token::CT_ANGLE_OPEN))
+      {
+         if (angle_depth == 0)
+         {
+            // Hit an unmatched template angle open without finding a paren
+            return(false);
+         }
+         angle_depth--;
+      }
+      else if (  tmp->Is(E_Token::CT_SEMICOLON)
+              || tmp->Is(E_Token::CT_BRACE_OPEN)
+              || tmp->Is(E_Token::CT_BRACE_CLOSE))
+      {
+         return(false);
+      }
+   }
+
+   return(false);
+} // is_in_func_signature_paren_within_template
+
+
 static bool handle_rvalue_angle_close(Chunk *prev, Chunk *pc)
 {
    if (prev->Is(E_Token::CT_ANGLE_CLOSE))
@@ -600,12 +678,19 @@ static bool handle_rvalue_angle_close(Chunk *prev, Chunk *pc)
          // If next is a word/type that could be the start of another template expression
          // (like std::is_move_constructible_v) this is likely a boolean AND
          // Pattern: bool_constant<is_class_v<T> && is_constructible_v<T>>
+         // But not when inside parens within the template, where it's a function
+         // type signature parameter like: function<void(span<int> && callback)>
          if (  next->Is(E_Token::CT_WORD)
             || next->Is(E_Token::CT_TYPE)
             || next->Is(E_Token::CT_DC_MEMBER)   // ::namespace
             || next->Is(E_Token::CT_DECLTYPE)
             || next->Is(E_Token::CT_SIZEOF))
          {
+            if (is_in_func_signature_paren_within_template(pc))
+            {
+               pc->SetType(E_Token::CT_BYREF);
+               return(true);
+            }
             LOG_FMT(LFCNR, "%s(%d): orig line is %zu, orig col is %zu - && after > inside template, keeping as BOOL\n",
                     __func__, __LINE__, pc->GetOrigLine(), pc->GetOrigCol());
             return(true);
@@ -800,9 +885,16 @@ static bool handle_rvalue_in_template(Chunk *prev, Chunk *pc, Chunk *next)
    // Handle && as logical AND inside template arguments
    // Pattern: std::conditional_t<A && B, T&&, U&&>
    // When next is WORD/TYPE this is likely a boolean expression not rvalue ref
+   // But not when inside parens within the template, where it's a function
+   // type signature parameter like: function<void(int && callback)>
    if (  next->Is(E_Token::CT_WORD)
       || next->Is(E_Token::CT_TYPE))
    {
+      if (is_in_func_signature_paren_within_template(pc))
+      {
+         pc->SetType(E_Token::CT_BYREF);
+         return(true);
+      }
       // This is logical AND inside template arguments (e.g, A && B)
       // Leave as E_Token::CT_BOOL and return true to prevent other handlers from converting to BYREF
       LOG_FMT(LFCNR, "%s(%d): orig line is %zu, orig col is %zu - && followed by WORD/TYPE inside template, keeping as BOOL\n",
